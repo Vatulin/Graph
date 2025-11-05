@@ -18,11 +18,17 @@ class Graph {
 private:
 	std::vector<Vertex> vertexList;
 	std::vector<Edge> edgeList;
+	int number_of_vertex = 0;
 
 public:
+	int get_number_of_vertex() {
+		return number_of_vertex;
+	}
+
 	void ADD_V(std::string name) {
 		Vertex vertex = { name, 0, NULL };
 		vertexList.push_back(vertex);
+		number_of_vertex++;
 	}
 
 	void ADD_E(int v, int w) {
@@ -129,21 +135,51 @@ public:
 	Iterator end() const {
 		return Iterator(*this, -1);
 	}
-
 };
 
-int main() 
+bool find_transitive_clourse(Graph& graph, int lvl) {
+	std::vector<std::vector<int>> M(lvl, std::vector<int>(lvl, 0));
+
+	for (int i = 0; i < lvl; i++) {
+		for (auto it = graph.begin(i); it != graph.end(); ++it) {
+			M[i][*it] = 1;
+			M[*it][i] = 1;
+		}
+	}
+
+	for (int k = 0; k < lvl; k++) {
+		for (int i = 0; i < lvl; i++) {
+			for (int j = 0; j < lvl; j++) {
+				M[i][j] = M[i][j] | (M[i][k] & M[k][j]);
+			}
+		}
+	}
+
+	for (int i = 0; i < lvl; i++) {
+		for (int j = 0; j < lvl; j++) {
+			if (M[i][j] != 1) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+int main()
 {
 	Graph g;
 	g.ADD_V("A");
 	g.ADD_V("B");
 	g.ADD_V("C");
 	g.ADD_V("D");
+	g.ADD_V("E");
 	g.ADD_E(0, 1);
 	g.ADD_E(0, 2);
 	g.ADD_E(2, 3);
 	g.ADD_E(0, 3);
-	for (auto it = g.begin(0); it != g.end(); ++it) {
-		std::cout << *it;
-	}
+	g.ADD_E(0, 0);
+	g.ADD_E(0, 4);
+	g.ADD_E(4, 1);
+	std::cout << find_transitive_clourse(g, g.get_number_of_vertex());
+	
 }
