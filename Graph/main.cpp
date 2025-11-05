@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 struct Vertex {
 	std::string name;
 	int mark;
-	Vertex* adjacent;
 };
 
 struct Edge {
@@ -18,17 +18,15 @@ class Graph {
 private:
 	std::vector<Vertex> vertexList;
 	std::vector<Edge> edgeList;
-	int number_of_vertex = 0;
 
 public:
-	int get_number_of_vertex() {
-		return number_of_vertex;
+	size_t get_number_of_vertex() {
+		return vertexList.size();
 	}
 
 	void ADD_V(std::string name) {
-		Vertex vertex = { name, 0, NULL };
+		Vertex vertex = { name, 0 };
 		vertexList.push_back(vertex);
-		number_of_vertex++;
 	}
 
 	void ADD_E(int v, int w) {
@@ -105,6 +103,34 @@ public:
 		return -1;
 	}
 
+
+	void visualizeSimple() {
+		std::cout << "\nÂÈÇÓÀËÈÇÀÖÈß ÃÐÀÔÀ:\n";
+		std::cout << "Âåðøèíû: ";
+		for (size_t i = 0; i < vertexList.size(); i++) {
+			std::cout << "(" << i << ":" << vertexList[i].name << ") ";
+		}
+		std::cout << "\n\n";
+
+		for (size_t i = 0; i < vertexList.size(); i++) {
+			std::cout << vertexList[i].name << " --> ";
+			for (const auto& edge : edgeList) {
+				if (edge.v == i) {
+					std::cout << vertexList[edge.w].name << " ";
+				}
+			}
+			std::cout << "\n";
+		}
+	}
+
+	Graph& operator=(const Graph& other) {
+		if (this != &other) {
+			this->vertexList = other.vertexList;
+			this->edgeList = other.edgeList;
+		}
+		return *this;
+	}
+
 	class Iterator {
 	private:
 		const Graph& graph;
@@ -137,14 +163,15 @@ public:
 	}
 };
 
-bool find_transitive_clourse(Graph& graph, int lvl) {
+std::vector<std::vector<int>> find_transitive_clourse(Graph& graph) {
+	size_t lvl = graph.get_number_of_vertex();
 	std::vector<std::vector<int>> M(lvl, std::vector<int>(lvl, 0));
 
 	for (int i = 0; i < lvl; i++) {
 		for (auto it = graph.begin(i); it != graph.end(); ++it) {
 			M[i][*it] = 1;
-			M[*it][i] = 1;
 		}
+		M[i][i] = 1;
 	}
 
 	for (int k = 0; k < lvl; k++) {
@@ -155,18 +182,49 @@ bool find_transitive_clourse(Graph& graph, int lvl) {
 		}
 	}
 
+	std::cout << "Ìàòðèöà òðàíçèòèâíîãî çàìûêàíèÿ:\n";
 	for (int i = 0; i < lvl; i++) {
 		for (int j = 0; j < lvl; j++) {
-			if (M[i][j] != 1) {
+			std::cout << M[i][j] << " ";
+		}
+		std::cout << std::endl;
+	}
+	return M;
+}
+
+bool transitive_clourse_equal(const std::vector<std::vector<int>>& original,
+	const std::vector<std::vector<int>>& test) {
+	for (int i = 0; i < original.size(); i++) {
+		for (int j = 0; j < original[0].size(); j++) {
+			if (original[i][j] != test[i][j])
 				return false;
-			}
 		}
 	}
 	return true;
 }
 
+Graph find_min_equal_graph(Graph& graph) {
+	size_t lvl = graph.get_number_of_vertex();
+	Graph min_equal_graph = graph;
+	std::vector<std::vector<int>>original_transitive_matrix = find_transitive_clourse(graph);
+
+	for (int i = 0; i < lvl; i++) {
+		for (int j = 0; j < lvl; j++) {
+			Graph graph_copy = graph;
+			graph_copy.DEL_E(i, j);
+			std::vector<std::vector<int>>test_transitive_matrix = find_transitive_clourse(graph_copy);
+
+			if (transitive_clourse_equal(original_transitive_matrix, test_transitive_matrix)) {
+				min_equal_graph.DEL_E(i, j);
+			}
+		}
+	}
+	return min_equal_graph;
+}
+
 int main()
 {
+	setlocale(LC_ALL, "Russian");
 	Graph g;
 	g.ADD_V("A");
 	g.ADD_V("B");
@@ -180,6 +238,6 @@ int main()
 	g.ADD_E(0, 0);
 	g.ADD_E(0, 4);
 	g.ADD_E(4, 1);
-	std::cout << find_transitive_clourse(g, g.get_number_of_vertex());
-	
+	Graph g1 = find_min_equal_graph(g);
+	g1.visualizeSimple();
 }
