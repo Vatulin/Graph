@@ -62,7 +62,7 @@ public:
 	}
 
 	void EDIT_V(std::string name, int new_mark) {
-		for (Vertex vertex : vertexList) {
+		for (Vertex& vertex : vertexList) {
 			if (vertex.name == name) {
 				vertex.mark = new_mark;
 				break;
@@ -71,7 +71,7 @@ public:
 	}
 
 	void EDIT_E(int v, int w, int new_weight) {
-		for (Edge edge : edgeList) {
+		for (Edge& edge : edgeList) {
 			if (edge.v == v && edge.w == w) {
 				edge.weight = new_weight;
 				break;
@@ -79,26 +79,18 @@ public:
 		}
 	}
 
-	int FIRST(int v) const{
-		for (Edge edge : edgeList) {
-			if (edge.v == v) {
-				return edge.w;
-			}
+	int FIRST(int v) const {
+		for (int i = 0; i < (int)edgeList.size(); i++) {
+			if (edgeList[i].v == v)
+				return i;
 		}
 		return -1;
 	}
 
 	int NEXT(int v, int current) const {
-		bool foundCurrent = false;
-		for (const Edge& edge : edgeList) {
-			if (edge.v == v) {
-				if (foundCurrent) {
-					return edge.w;
-				}
-				if (edge.w == current) {
-					foundCurrent = true;
-				}
-			}
+		for (int i = current + 1; i < (int)edgeList.size(); i++) {
+			if (edgeList[i].v == v)
+				return i;
 		}
 		return -1;
 	}
@@ -135,31 +127,38 @@ public:
 	private:
 		const Graph& graph;
 		int vertex;
-		int currentEdge;
-	
+		int currentEdgeIndex;
+
 	public:
-		Iterator(const Graph& g, int v) : graph(g), vertex(v), 
-			currentEdge(g.FIRST(v)) { }
+		Iterator(const Graph& g, int v, int idx = -2)
+			: graph(g), vertex(v)
+		{
+			if (idx == -2)
+				currentEdgeIndex = g.FIRST(v);
+			else
+				currentEdgeIndex = idx;
+		}
 
 		int operator*() const {
-			return currentEdge;
+			if (currentEdgeIndex == -1) return -1;
+			return graph.edgeList[currentEdgeIndex].w;
 		}
 
 		Iterator& operator++() {
-			currentEdge = graph.NEXT(vertex, currentEdge);
+			currentEdgeIndex = graph.NEXT(vertex, currentEdgeIndex);
 			return *this;
 		}
 
 		bool operator!=(const Iterator& other) const {
-			return currentEdge != other.currentEdge;
+			return currentEdgeIndex != other.currentEdgeIndex || vertex != other.vertex;
 		}
 	};
 
 	Iterator begin(int v) const {
 		return Iterator(*this, v);
 	}
-	Iterator end() const {
-		return Iterator(*this, -1);
+	Iterator end(int v) const {
+		return Iterator(*this, v, -1);
 	}
 };
 
@@ -168,7 +167,7 @@ std::vector<std::vector<int>> find_transitive_clourse(Graph& graph) {
 	std::vector<std::vector<int>> M(lvl, std::vector<int>(lvl, 0));
 
 	for (int i = 0; i < lvl; i++) {
-		for (auto it = graph.begin(i); it != graph.end(); ++it) {
+		for (auto it = graph.begin(i); it != graph.end(i); ++it) {
 			M[i][*it] = 1;
 		}
 		M[i][i] = 1;
@@ -182,20 +181,20 @@ std::vector<std::vector<int>> find_transitive_clourse(Graph& graph) {
 		}
 	}
 
-	std::cout << "Матрица транзитивного замыкания:\n";
 	for (int i = 0; i < lvl; i++) {
 		for (int j = 0; j < lvl; j++) {
 			std::cout << M[i][j] << " ";
 		}
 		std::cout << std::endl;
 	}
+	std::cout << std::endl;
 	return M;
 }
 
 bool transitive_clourse_equal(const std::vector<std::vector<int>>& original,
 	const std::vector<std::vector<int>>& test) {
 	for (int i = 0; i < original.size(); i++) {
-		for (int j = 0; j < original[0].size(); j++) {
+		for (int j = 0; j < test.size(); j++) {
 			if (original[i][j] != test[i][j])
 				return false;
 		}
@@ -226,18 +225,30 @@ int main()
 {
 	setlocale(LC_ALL, "Russian");
 	Graph g;
-	g.ADD_V("A");
-	g.ADD_V("B");
-	g.ADD_V("C");
-	g.ADD_V("D");
-	g.ADD_V("E");
+	g.ADD_V("A"); //0
+	g.ADD_V("B"); //1
+	g.ADD_V("C"); //2
+	g.ADD_V("D"); //3
+	g.ADD_V("E"); //4
+	g.ADD_V("F"); //5
+	g.ADD_V("G"); //6
 	g.ADD_E(0, 1);
-	g.ADD_E(0, 2);
+	g.ADD_E(1, 0);
+	g.ADD_E(1, 5);
+	g.ADD_E(1, 6);
+	g.ADD_E(1, 2);
+	g.ADD_E(5, 2);
+	g.ADD_E(2, 5);
 	g.ADD_E(2, 3);
+	g.ADD_E(5, 3);
+	g.ADD_E(1, 3);
 	g.ADD_E(0, 3);
-	g.ADD_E(0, 0);
+	g.ADD_E(3, 4);
+	g.ADD_E(4, 3);
 	g.ADD_E(0, 4);
-	g.ADD_E(4, 1);
+	
 	Graph g1 = find_min_equal_graph(g);
+	std::cout << std::endl << std::endl;
+	find_transitive_clourse(g1);
 	g1.visualizeSimple();
 }
