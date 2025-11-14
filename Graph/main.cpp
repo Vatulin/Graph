@@ -96,14 +96,7 @@ public:
 	}
 
 
-	void visualizeSimple() {
-		std::cout << "\nÂÈÇÓÀËÈÇÀÖÈß ÃÐÀÔÀ:\n";
-		std::cout << "Âåðøèíû: ";
-		for (size_t i = 0; i < vertexList.size(); i++) {
-			std::cout << "(" << i << ":" << vertexList[i].name << ") ";
-		}
-		std::cout << "\n\n";
-
+	void print() {
 		for (size_t i = 0; i < vertexList.size(); i++) {
 			std::cout << vertexList[i].name << " --> ";
 			for (const auto& edge : edgeList) {
@@ -111,8 +104,9 @@ public:
 					std::cout << vertexList[edge.w].name << " ";
 				}
 			}
-			std::cout << "\n";
+			std::cout << std::endl;
 		}
+		std::cout << std::endl;
 	}
 
 	Graph& operator=(const Graph& other) {
@@ -180,14 +174,6 @@ std::vector<std::vector<int>> find_transitive_clourse(Graph& graph) {
 			}
 		}
 	}
-
-	for (int i = 0; i < lvl; i++) {
-		for (int j = 0; j < lvl; j++) {
-			std::cout << M[i][j] << " ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
 	return M;
 }
 
@@ -224,31 +210,45 @@ Graph find_min_equal_graph(Graph& graph) {
 int main()
 {
 	setlocale(LC_ALL, "Russian");
-	Graph g;
-	g.ADD_V("A"); //0
-	g.ADD_V("B"); //1
-	g.ADD_V("C"); //2
-	g.ADD_V("D"); //3
-	g.ADD_V("E"); //4
-	g.ADD_V("F"); //5
-	g.ADD_V("G"); //6
-	g.ADD_E(0, 1);
-	g.ADD_E(1, 0);
-	g.ADD_E(1, 5);
-	g.ADD_E(1, 6);
-	g.ADD_E(1, 2);
-	g.ADD_E(5, 2);
-	g.ADD_E(2, 5);
-	g.ADD_E(2, 3);
-	g.ADD_E(5, 3);
-	g.ADD_E(1, 3);
-	g.ADD_E(0, 3);
-	g.ADD_E(3, 4);
-	g.ADD_E(4, 3);
-	g.ADD_E(0, 4);
+
+	//Ïðèìåð 1
+	std::cout << "Ïðèïåð 1: " << std::endl;
+	Graph g1;
+	g1.ADD_V("A");
+	g1.ADD_V("B");
+	g1.ADD_V("C");
+	g1.ADD_V("D");
+	g1.ADD_V("E");
 	
-	Graph g1 = find_min_equal_graph(g);
-	std::cout << std::endl << std::endl;
-	find_transitive_clourse(g1);
-	g1.visualizeSimple();
+	g1.ADD_E(0, 1);
+	g1.ADD_E(0, 2);
+	g1.ADD_E(0, 3);
+	g1.ADD_E(1, 2);
+	g1.ADD_E(3, 4);
+	Graph g1_min = find_min_equal_graph(g1);
+	g1_min.print();
+
+	//Ïðèìåð 2
+	std::cout << "Ïðèïåð 2: " << std::endl;
+	Graph g2;
+	g2.ADD_V("A");
+	g2.ADD_V("B");
+	g2.ADD_V("C");
+	g2.ADD_V("D");
+	g2.ADD_V("E");
+	g2.ADD_V("F");
+
+	g2.ADD_E(0, 1);
+	g2.ADD_E(0, 4);
+	g2.ADD_E(0, 5);
+	g2.ADD_E(5, 0);
+	g2.ADD_E(1, 0);
+	g2.ADD_E(1, 2);
+	g2.ADD_E(1, 3);
+	g2.ADD_E(1, 4);
+	g2.ADD_E(2, 3);
+	g2.ADD_E(3, 4);
+	Graph g2_min = find_min_equal_graph(g2);
+	g2_min.print();
+	
 }
