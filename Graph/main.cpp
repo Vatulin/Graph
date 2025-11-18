@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
 
 struct Vertex {
 	std::string name;
@@ -18,11 +17,14 @@ class Graph {
 private:
 	std::vector<Vertex> vertexList;
 	std::vector<Edge> edgeList;
+	int currentVertex = -1;
 
 public:
 	size_t get_number_of_vertex() {
 		return vertexList.size();
 	}
+
+	void setCurrentVertex(int v) { currentVertex = v; }
 
 	void ADD_V(std::string name) {
 		Vertex vertex = { name, 0 };
@@ -80,19 +82,25 @@ public:
 	}
 
 	int FIRST(int v) const {
-		for (int i = 0; i < (int)edgeList.size(); i++) {
-			if (edgeList[i].v == v)
-				return i;
+		for (const auto& edge : edgeList) {
+			if (edge.v == v)
+				return edge.w; // возвращаем вершину w, а не индекс
 		}
 		return -1;
 	}
 
 	int NEXT(int v, int current) const {
-		for (int i = current + 1; i < (int)edgeList.size(); i++) {
-			if (edgeList[i].v == v)
-				return i;
+		size_t i_current = edgeList.size();
+		for (size_t i = 0; i < edgeList.size(); i++) {
+			if (edgeList[i].v == v && edgeList[i].w == current) {
+				i_current = i;
+				break;
+			}
 		}
-		return -1;
+
+		for (size_t j = i_current + 1; j < edgeList.size(); j++) // ищем первую следующую дугу, инцидентную v
+			if (edgeList[j].v == v) return edgeList[j].w;
+		return -1; 
 	}
 
 
@@ -121,38 +129,37 @@ public:
 	private:
 		const Graph& graph;
 		int vertex;
-		int currentEdgeIndex;
+		int vertex_smegn;
 
 	public:
-		Iterator(const Graph& g, int v, int idx = -2)
-			: graph(g), vertex(v)
-		{
-			if (idx == -2)
-				currentEdgeIndex = g.FIRST(v);
-			else
-				currentEdgeIndex = idx;
-		}
+		Iterator(const Graph& g) : graph(g), vertex(-1), vertex_smegn(-1) {};
+		Iterator(const Graph& g, int v) : graph(g), vertex(v), vertex_smegn(g.FIRST(v)) {};
 
 		int operator*() const {
-			if (currentEdgeIndex == -1) return -1;
-			return graph.edgeList[currentEdgeIndex].w;
+			return vertex_smegn; 
 		}
 
 		Iterator& operator++() {
-			currentEdgeIndex = graph.NEXT(vertex, currentEdgeIndex);
+			vertex_smegn = graph.NEXT(vertex, vertex_smegn);
 			return *this;
 		}
 
 		bool operator!=(const Iterator& other) const {
-			return currentEdgeIndex != other.currentEdgeIndex || vertex != other.vertex;
+			return vertex_smegn != other.vertex_smegn || &graph != &other.graph;
 		}
 	};
 
-	Iterator begin(int v) const {
+	Iterator begin() const {
+		return Iterator(*this, currentVertex);
+	}
+
+	Iterator begin(int v) {
+		Graph::currentVertex = v;
 		return Iterator(*this, v);
 	}
-	Iterator end(int v) const {
-		return Iterator(*this, v, -1);
+
+	Iterator end() const {
+		return Iterator(*this, -1);
 	}
 };
 
@@ -161,8 +168,9 @@ std::vector<std::vector<int>> find_transitive_clourse(Graph& graph) {
 	std::vector<std::vector<int>> M(lvl, std::vector<int>(lvl, 0));
 
 	for (int i = 0; i < lvl; i++) {
-		for (auto it = graph.begin(i); it != graph.end(i); ++it) {
-			M[i][*it] = 1;
+		graph.setCurrentVertex(i);
+		for (auto v : graph) {
+			M[i][v] = 1;
 		}
 		M[i][i] = 1;
 	}
@@ -212,7 +220,7 @@ int main()
 	setlocale(LC_ALL, "Russian");
 
 	//Пример 1
-	std::cout << "Припер 1: " << std::endl;
+	std::cout << "Пример 1: " << std::endl;
 	Graph g1;
 	g1.ADD_V("A");
 	g1.ADD_V("B");
@@ -225,11 +233,12 @@ int main()
 	g1.ADD_E(0, 3);
 	g1.ADD_E(1, 2);
 	g1.ADD_E(3, 4);
+
 	Graph g1_min = find_min_equal_graph(g1);
 	g1_min.print();
 
 	//Пример 2
-	std::cout << "Припер 2: " << std::endl;
+	std::cout << "Приvер 2: " << std::endl;
 	Graph g2;
 	g2.ADD_V("A");
 	g2.ADD_V("B");
@@ -250,5 +259,4 @@ int main()
 	g2.ADD_E(3, 4);
 	Graph g2_min = find_min_equal_graph(g2);
 	g2_min.print();
-	
 }
